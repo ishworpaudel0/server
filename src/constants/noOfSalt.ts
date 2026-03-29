@@ -1,0 +1,1 @@
+export const noOfSalt = 10;
