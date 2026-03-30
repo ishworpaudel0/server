@@ -1,22 +1,25 @@
 import {config} from "../config";
-import { IUser } from "../models/userModel";
-import jwt from "jsonwebtoken";
-import { Types } from "mongoose";
+import { UserWithRolesAndPermission } from "../interfaces/userInterface";
 
-export const generateAccessToken = (userId: string | Types.ObjectId, email: string) => {
+import jwt from "jsonwebtoken";
+
+
+export const generateAccessToken = (user : UserWithRolesAndPermission, roles?: string[], permissions?: string[]) => {
     if (!config.JWT_SECRET) {
         throw new Error("JWT_SECRET is not defined in environment variables");
     }
     return jwt.sign(
         {
-        userId,
-        email
+        userId: user._id,
+        email: user.email,
+        roles,
+        permissions
     }
     , config.JWT_SECRET, { expiresIn: '1d' }
     );
 }
 
-export const generateRefreshToken = (userId: string | Types.ObjectId ) => {
+export const generateRefreshToken = (userId: UserWithRolesAndPermission) => {
     if (!config.JWT_SECRET) {
         throw new Error("JWT_SECRET is not defined in environment variables");
     }

@@ -1,4 +1,4 @@
-import { userRegister, userLogin } from "../interfaces/user";
+import { userRegisterRequest, userLoginRequest, UserWithRolesAndPermission } from "../interfaces/userInterface";
 import { noOfSalt } from "../constants/noOfSalt";
 import userModel from "../models/userModel"
 import bcrypt from "bcrypt";
@@ -10,22 +10,37 @@ import { config } from "../config";
 import SessionModel from "../models/sessionModel";
 import UserModel from "../models/userModel";
 import { Types } from "mongoose";
+import RoleModel from "../models/rolesModel";
 
 
-export const register = async (data: userRegister) => {
-    const { name, email, password } = data;
+export const register = async (data: userRegisterRequest) => {
+    const { name, email, password, roles} = data;
     const existingUser = await userModel.findOne({email});
     if (existingUser) {
         throw new Error ("User already Exist!")
     }
+    let rolesId: Types.ObjectId[] = [];
+    if (roles && roles.length > 0) {
+        const fetchedRoles = await RoleModel.find({ name: { $in: roles } });
+        rolesId = fetchedRoles.map(role => role._id);
+
+        if (rolesId.length !== roles.length) {
+            throw new Error("One or more roles do not exist");
+        }
+    }
     const hashedPassword = await bcrypt.hash (password, noOfSalt);
 
-    return await userModel.create ({ name, email, password: hashedPassword });
+    return await userModel.create ({ name, email, password: hashedPassword, roles: rolesId });
 }
 
-export const login = async (data: userLogin) => {
+export const login = async (data: userLoginRequest) => {
     const { email, password } = data;
-    const user = await userModel.findOne({email}).select("+password");
+    const user = await UserModel.findOne({ email }).populate({
+        path: "roles",
+        populate: {
+            path: "permissions"
+        }
+    }).select("+password") as UserWithRolesAndPermission;
 
     if (!user) {
         logger.warn ("User email not found"+ email)
@@ -37,8 +52,12 @@ export const login = async (data: userLogin) => {
         logger.warn ("Password doent match for user" + email)
         throw new Error ("Password not Valid!");
     }
-   const accessToken = await generateAccessToken(user._id as Types.ObjectId, user.email);
-   const refreshToken = await generateRefreshToken(user._id as Types.ObjectId);
+    const roles = user?.roles?.map((role) => role.name) ?? [];
+    const permissions = user?.roles?.flatMap((role) => role.permissions?.map((permission) => permission.name) ?? []) ?? [];
+
+   const accessToken = await generateAccessToken(user, roles, permissions);
+   const refreshToken = await generateRefreshToken(user);
+
    const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 1); //set expiry to 30 minutes
        await sessionModel.create({ userId: user._id, refreshToken, expiresAt });
@@ -48,7 +67,8 @@ export const login = async (data: userLogin) => {
     user: {
         id: user._id,
         name: user.name,
-        email: user.email
+        email: user.email,
+        roles: user.roles
     }
    }
 }
@@ -69,7 +89,7 @@ export const refreshAccessToken = async (refreshToken: string) => {
     const user = await UserModel.findById(decoded.userId);
     if (!user) throw new Error("User not found");
 
-    const newAccessToken = generateAccessToken(user._id as Types.ObjectId, user.email);
+    const newAccessToken = generateAccessToken(user as unknown as UserWithRolesAndPermission);
 
     return { accessToken: newAccessToken };
 };

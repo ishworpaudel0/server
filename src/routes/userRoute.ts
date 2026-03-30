@@ -1,11 +1,11 @@
 import { Router } from "express";
 import * as userController from "../controller/userController";
-import { authenticate, UserRequest } from "../middlewares/authMiddleware";
-
+import { authenticate, AuthRequest } from "../middlewares/authMiddleware";
+import { authorizeWithPermission } from "../middlewares/authorizeWithPermission";
 
 const router = Router();
 
-router.get("/me", authenticate, (req: UserRequest, res) => {
+router.get("/me", authenticate, (req: AuthRequest, res) => {
     console.log("Authenticated user");
 
     console.log("Request", req.user);
@@ -13,6 +13,6 @@ router.get("/me", authenticate, (req: UserRequest, res) => {
     res.send({});
 });
 
-router.get("/", userController.getAll);
+router.get("/", authenticate, authorizeWithPermission({ permission: "view_users" }), userController.getAll);
 
 export default router;

@@ -81,7 +81,6 @@ export const refreshToken = async (
       });
     }
 
-    // Logic to verify refresh token and generate a NEW access token
     const result = await authServices.refreshAccessToken(refreshToken);
 
     return successResponse(res, {
