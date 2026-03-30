@@ -3,8 +3,9 @@ import * as authController from '../controller/authController';
 
 const router = Router();
 
-router.use('/api/register', authController.register);
-router.use('/api/login', authController.login);
-router.use('/api/logout', authController.logout);
+router.post('/api/register', authController.register);
+router.post('/api/login', authController.login);
+router.post('/api/logout', authController.logout);
+router.post('/api/refresh-token', authController.refreshToken);
 
 export default router;
