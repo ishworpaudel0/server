@@ -18,5 +18,18 @@ export const createPermission = async (req: Request, res: Response, next: NextFu
                 message: "Server error during permission creation",
             });
         }
+}
+export const getAllPermissions = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const response = await permissionService.getAllPermissions();
+
+        return successResponse(res, { data: response })
     }
-    
+    catch (error) {
+        next(error);
+    }
+}    

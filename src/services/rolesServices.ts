@@ -5,8 +5,8 @@ import PermissionModel from "../models/permissionModel";
 import RoleModel from "../models/rolesModel";
 
 export const createRole = async (data: createRoleRequest) => {
-  const { roleName, description, permissions } = data;
-  const existingRole = await Role.findOne({ roleName });
+  const { name, description, permissions } = data;
+  const existingRole = await Role.findOne({ name });
 
   if (existingRole) {
     throw new Error("Role already exists!");
@@ -22,7 +22,7 @@ export const createRole = async (data: createRoleRequest) => {
     }
   }
   return RoleModel.create({
-    roleName,
+    name,
     description,
     ...(permissionIds.length > 0 && { permissions: permissionIds }),
   });

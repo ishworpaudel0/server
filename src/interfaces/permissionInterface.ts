@@ -1,9 +1,9 @@
 export interface Permission {
-    permissionName: string;
+    name: string;
     description: string;
 }
 
 export interface CreatePermissionRequest {
-    permissionName: string;
+    name: string;
     description: string;
 } 

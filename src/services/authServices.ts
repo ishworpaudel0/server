@@ -9,28 +9,19 @@ import jwt from "jsonwebtoken";
 import { config } from "../config";
 import SessionModel from "../models/sessionModel";
 import UserModel from "../models/userModel";
-import { Types } from "mongoose";
-import RoleModel from "../models/rolesModel";
+
 
 
 export const register = async (data: userRegisterRequest) => {
-    const { name, email, password, roles} = data;
+    const { name, email, password} = data;
     const existingUser = await userModel.findOne({email});
     if (existingUser) {
         throw new Error ("User already Exist!")
     }
-    let rolesId: Types.ObjectId[] = [];
-    if (roles && roles.length > 0) {
-        const fetchedRoles = await RoleModel.find({ name: { $in: roles } });
-        rolesId = fetchedRoles.map(role => role._id);
 
-        if (rolesId.length !== roles.length) {
-            throw new Error("One or more roles do not exist");
-        }
-    }
     const hashedPassword = await bcrypt.hash (password, noOfSalt);
 
-    return await userModel.create ({ name, email, password: hashedPassword, roles: rolesId });
+    return await userModel.create ({ name, email, password: hashedPassword});
 }
 
 export const login = async (data: userLoginRequest) => {
